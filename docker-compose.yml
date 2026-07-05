@@ -1,0 +1,238 @@
+﻿version: "3.9"
+
+services:
+  # ─── Infrastructure ────────────────────────────────────────────────────────
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: store_sqlserver
+    environment:
+      SA_PASSWORD: "Strong@Passw0rd!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"Strong@Passw0rd!\" -Q \"SELECT 1\" -C -N o 2>/dev/null || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"Strong@Passw0rd!\" -Q \"SELECT 1\" 2>/dev/null'"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    container_name: store_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: store_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  seq:
+    image: datalust/seq:latest
+    container_name: store_seq
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+
+  # ─── Microservices ─────────────────────────────────────────────────────────
+
+  userauthservice:
+    build:
+      context: .
+      dockerfile: UserAuthService/Dockerfile
+    container_name: userauthservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=userauthdb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
+    ports:
+      - "5001:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  productcatalogservice1:
+    build:
+      context: .
+      dockerfile: ProductCatalogService/Dockerfile
+    container_name: productcatalogservice1
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=catalogdb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
+      ConnectionStrings__Redis: "redis:6379"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
+    ports:
+      - "5002:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  productcatalogservice2:
+    build:
+      context: .
+      dockerfile: ProductCatalogService/Dockerfile
+    container_name: productcatalogservice2
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=catalogdb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
+      ConnectionStrings__Redis: "redis:6379"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
+    ports:
+      - "5009:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  orderservice:
+    build:
+      context: .
+      dockerfile: OrderService/Dockerfile
+    container_name: orderservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=orderdb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
+      ConnectionStrings__Redis: "redis:6379"
+      ServiceUrls__CatalogService: "http://productcatalogservice1:8080/"
+      ServiceUrls__UserAuthService: "http://userauthservice:8080/"
+      RabbitMQ__Host: "rabbitmq"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
+    ports:
+      - "5003:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      productcatalogservice1:
+        condition: service_started
+      userauthservice:
+        condition: service_started
+
+  inventoryservice:
+    build:
+      context: .
+      dockerfile: InventoryService/Dockerfile
+    container_name: inventoryservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=inventorydb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
+      RabbitMQ__Host: "rabbitmq"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
+    ports:
+      - "5005:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notificationservice:
+    build:
+      context: .
+      dockerfile: NotificationService/Dockerfile
+    container_name: notificationservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      RabbitMQ__Host: "rabbitmq"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
+    ports:
+      - "5006:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  bffservice:
+    build:
+      context: .
+      dockerfile: BffService/Dockerfile
+    container_name: bffservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Redis: "redis:6379"
+      ServiceUrls__CatalogService: "http://productcatalogservice1:8080/"
+      ServiceUrls__OrderService: "http://orderservice:8080/"
+      ServiceUrls__UserAuthService: "http://userauthservice:8080/"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
+    ports:
+      - "5004:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      productcatalogservice1:
+        condition: service_started
+      orderservice:
+        condition: service_started
+      userauthservice:
+        condition: service_started
+
+  apigateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    container_name: apigateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+    ports:
+      - "5000:8080"
+    depends_on:
+      - userauthservice
+      - productcatalogservice1
+      - productcatalogservice2
+      - orderservice
+      - inventoryservice
+      - notificationservice
+      - bffservice
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: store_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - apigateway
+
+volumes:
+  sqlserver_data:
+  redis_data:
+  rabbitmq_data:
+  seq_data:
