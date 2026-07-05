@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using SharedKernel.Middleware;
@@ -22,6 +23,27 @@ public sealed class RabbitMqPublisher : IMessagePublisher, IDisposable
     {
         _hostName = hostName;
         _logger = logger;
+        EnsureConnectedWithRetry(retries: 10, delaySeconds: 5);
+    }
+
+    private void EnsureConnectedWithRetry(int retries, int delaySeconds)
+    {
+        for (int attempt = 1; attempt <= retries; attempt++)
+        {
+            try
+            {
+                EnsureConnected();
+                return;
+            }
+            catch (Exception ex) when (attempt < retries)
+            {
+                _logger.LogWarning(ex,
+                    "RabbitMQ not ready (attempt {Attempt}/{Max}). Retrying in {Delay}s...",
+                    attempt, retries, delaySeconds);
+                Thread.Sleep(TimeSpan.FromSeconds(delaySeconds));
+            }
+        }
+        // Final attempt — let any exception propagate naturally
         EnsureConnected();
     }
 
