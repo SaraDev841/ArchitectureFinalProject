@@ -51,15 +51,13 @@ try
     builder.Services.AddHttpClient<CatalogClient>(client =>
         client.BaseAddress = new Uri(serviceUrls["CatalogService"]!));
 
-    builder.Services.AddHttpClient<OrderClient>(client =>
+    builder.Services.AddHttpClient<IOrderClient, OrderClient>(client =>
         client.BaseAddress = new Uri(serviceUrls["OrderService"]!));
 
-    builder.Services.AddHttpClient<UserClient>(client =>
+    builder.Services.AddHttpClient<IUserClient, UserClient>(client =>
         client.BaseAddress = new Uri(serviceUrls["UserAuthService"]!));
 
     builder.Services.AddScoped<ICatalogClient, CachedCatalogClient>();
-    builder.Services.AddScoped<IOrderClient, OrderClient>();
-    builder.Services.AddScoped<IUserClient, UserClient>();
     builder.Services.AddScoped<ProductWithOrdersComposer>();
 
     builder.Services.AddHealthChecks();

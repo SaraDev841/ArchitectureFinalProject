@@ -10,15 +10,15 @@ services:
       SA_PASSWORD: "Strong@Passw0rd!"
       ACCEPT_EULA: "Y"
     ports:
-      - "1433:1433"
+      - "1434:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"Strong@Passw0rd!\" -Q \"SELECT 1\" -C -N o 2>/dev/null || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"Strong@Passw0rd!\" -Q \"SELECT 1\" 2>/dev/null'"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S 127.0.0.1,1433 -U sa -P 'Strong@Passw0rd!' -Q 'SELECT 1' -No -C 2>/dev/null || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 15
-      start_period: 60s
+      start_period: 90s
 
   redis:
     image: redis:7-alpine
@@ -83,7 +83,7 @@ services:
       dockerfile: ProductCatalogService/Dockerfile
     container_name: productcatalogservice1
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=catalogdb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
       ConnectionStrings__Redis: "redis:6379"
@@ -102,7 +102,7 @@ services:
       dockerfile: ProductCatalogService/Dockerfile
     container_name: productcatalogservice2
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=catalogdb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
       ConnectionStrings__Redis: "redis:6379"
@@ -121,7 +121,7 @@ services:
       dockerfile: OrderService/Dockerfile
     container_name: orderservice
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=orderdb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
       ConnectionStrings__Redis: "redis:6379"
@@ -149,7 +149,7 @@ services:
       dockerfile: InventoryService/Dockerfile
     container_name: inventoryservice
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=inventorydb;User Id=sa;Password=Strong@Passw0rd!;TrustServerCertificate=True;"
       RabbitMQ__Host: "rabbitmq"
@@ -168,7 +168,7 @@ services:
       dockerfile: NotificationService/Dockerfile
     container_name: notificationservice
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       RabbitMQ__Host: "rabbitmq"
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
@@ -184,7 +184,7 @@ services:
       dockerfile: BffService/Dockerfile
     container_name: bffservice
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__Redis: "redis:6379"
       ServiceUrls__CatalogService: "http://productcatalogservice1:8080/"
@@ -209,7 +209,7 @@ services:
       dockerfile: ApiGateway/Dockerfile
     container_name: apigateway
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
     ports:
       - "5000:8080"
@@ -222,15 +222,6 @@ services:
       - notificationservice
       - bffservice
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: store_frontend
-    ports:
-      - "4200:80"
-    depends_on:
-      - apigateway
 
 volumes:
   sqlserver_data:

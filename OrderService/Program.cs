@@ -75,7 +75,7 @@ try
     {
         client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:CatalogService"] ?? "http://localhost:5002/");
     });
-    builder.Services.AddHttpClient<UserClient>(client =>
+    builder.Services.AddHttpClient<IUserClient, UserClient>(client =>
     {
         client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:UserAuthService"] ?? "http://localhost:5001/");
     });
@@ -85,7 +85,6 @@ try
         sp.GetRequiredService<CatalogClient>(),
         sp.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>(),
         sp.GetRequiredService<ILogger<CachedCatalogClient>>()));
-    builder.Services.AddScoped<IUserClient, UserClient>();
 
     builder.Services.AddScoped<IOrderRepository, OrderRepository>();
     builder.Services.AddScoped<IOrderService, OrderService.Services.OrderService>();

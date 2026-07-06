@@ -19,7 +19,6 @@ All services start automatically. Databases are created and migrated on first bo
 | Service | URL | Notes |
 |---|---|---|
 | **API Gateway** | http://localhost:5000 | Single entry point for all clients |
-| **Angular Frontend** | http://localhost:4200 | Full UI |
 | **Seq (Log Viewer)** | http://localhost:5341 | Centralised structured logs |
 | **RabbitMQ Management** | http://localhost:15672 | guest / guest |
 | **Swagger — UserAuth** | http://localhost:5001/swagger | Direct (dev only) |

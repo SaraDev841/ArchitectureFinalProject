@@ -95,10 +95,22 @@ try
 
     var app = builder.Build();
 
-    using (var scope = app.Services.CreateScope())
+    // Retry migration to handle race condition when multiple replicas start simultaneously
+    for (int attempt = 1; attempt <= 5; attempt++)
     {
-        var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
-        db.Database.Migrate();
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+            db.Database.Migrate();
+            break;
+        }
+        catch (Exception ex) when (attempt < 5)
+        {
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning("Migration attempt {Attempt} failed: {Message}. Retrying in 5s...", attempt, ex.Message);
+            Thread.Sleep(5000);
+        }
     }
 
     app.UseCorrelationId();
