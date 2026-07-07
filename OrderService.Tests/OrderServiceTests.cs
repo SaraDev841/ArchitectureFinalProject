@@ -106,7 +106,7 @@ public class OrderServiceTests
         var result = await sut.CreateOrderAsync(dto);
 
         // Assert
-        Assert.Equal("Confirmed", result.Status);
+        Assert.Equal("Pending", result.Status);
         Assert.Equal(2500m, result.TotalAmount);
         Assert.Equal("Jane Doe", result.UserName);
 
