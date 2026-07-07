@@ -1,7 +1,7 @@
-﻿version: "3.9"
+version: "3.9"
 
 services:
-  # ─── Infrastructure ────────────────────────────────────────────────────────
+  # ??? Infrastructure ????????????????????????????????????????????????????????
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -59,7 +59,7 @@ services:
     volumes:
       - seq_data:/data
 
-  # ─── Microservices ─────────────────────────────────────────────────────────
+  # ??? Microservices ?????????????????????????????????????????????????????????
 
   userauthservice:
     build:
@@ -73,6 +73,12 @@ services:
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5001:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -90,6 +96,12 @@ services:
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5002:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -109,6 +121,12 @@ services:
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5009:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -131,6 +149,12 @@ services:
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5003:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -139,9 +163,9 @@ services:
       rabbitmq:
         condition: service_healthy
       productcatalogservice1:
-        condition: service_started
+        condition: service_healthy
       userauthservice:
-        condition: service_started
+        condition: service_healthy
 
   inventoryservice:
     build:
@@ -156,6 +180,12 @@ services:
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5005:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -174,6 +204,12 @@ services:
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5006:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -193,15 +229,21 @@ services:
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5004:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       redis:
         condition: service_healthy
       productcatalogservice1:
-        condition: service_started
+        condition: service_healthy
       orderservice:
-        condition: service_started
+        condition: service_healthy
       userauthservice:
-        condition: service_started
+        condition: service_healthy
 
   apigateway:
     build:
@@ -213,14 +255,27 @@ services:
       ASPNETCORE_URLS: http://+:8080
     ports:
       - "5000:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
-      - userauthservice
-      - productcatalogservice1
-      - productcatalogservice2
-      - orderservice
-      - inventoryservice
-      - notificationservice
-      - bffservice
+      userauthservice:
+        condition: service_healthy
+      productcatalogservice1:
+        condition: service_healthy
+      productcatalogservice2:
+        condition: service_healthy
+      orderservice:
+        condition: service_healthy
+      inventoryservice:
+        condition: service_healthy
+      notificationservice:
+        condition: service_healthy
+      bffservice:
+        condition: service_healthy
 
 
 volumes:

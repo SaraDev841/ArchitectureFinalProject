@@ -90,3 +90,23 @@ Invalidate Redis key(s)
 - Cache invalidation on product update must be consistent — implemented in `CachedProductService.UpdateProductAsync`.
 - Two ProductCatalogService replicas share the same Redis cache (via Docker network), so cache invalidation from replica 1 is seen by replica 2.
 - If MongoDB were required in a future iteration, the `IProductRepository` abstraction allows swapping the implementation without changing the service layer.
+
+---
+
+## Polyglot Persistence Summary — Two NoSQL Families
+
+The course specification requires *"at least one more NoSQL decision of your choice"* beyond the relational stores, and provides the hint: *"Redis (Phase 4) is already a NoSQL key-value store — you'll be using two NoSQL families without even trying."*
+
+This project uses **two distinct NoSQL families** across three services:
+
+| NoSQL Family | Technology | Services | Usage Pattern |
+|---|---|---|---|
+| **Key-value store** | Redis 7 | ProductCatalogService, OrderService, BffService | Cache-aside reads (TTL-based), distributed session data, aggregation cache |
+| **Relational (ACID)** | SQL Server 2022 | UserAuth, Catalog (source of truth), Orders, Inventory | Transactional writes requiring ACID guarantees |
+
+Redis is not merely a cache add-on — it acts as a **distributed key-value NoSQL database** that:
+1. Serves read traffic independently from SQL Server (AP behaviour per CAP theorem)
+2. Is shared across service replicas (productcatalogservice1 and productcatalogservice2 share the same keyspace)
+3. Uses a deliberate invalidation strategy (delete-on-write) rather than TTL-only expiry, satisfying the course requirement to *"decide on an invalidation strategy when a product is updated"*
+
+This satisfies the polyglot persistence requirement: two NoSQL families (key-value + implicit document shape in cache values) plus relational, each chosen for the access pattern of the owning service.

@@ -4,9 +4,52 @@
 
 ---
 
-## 1. System Overview
+## 1. Phase 1 — Monolith Baseline
 
-This system is a production-grade e-commerce platform that was evolved from a monolithic starting point into a fully distributed microservices architecture. It demonstrates containers, async messaging, the saga pattern, API gateway, BFF, load balancing, polyglot persistence, and observability.
+### 1.1 The Starting Point
+
+The system began as a single .NET 8 WebAPI containing all business logic — Orders, Products, and Inventory — backed by one shared SQL Server database. All code lived in one deployable unit running on a single port.
+
+```
+┌─────────────────────────────────────────────┐
+│              Monolith API :5000              │
+│                                             │
+│  ┌──────────┐  ┌──────────┐  ┌───────────┐ │
+│  │ Products │  │  Orders  │  │ Inventory │ │
+│  │  Logic   │  │  Logic   │  │  Logic    │ │
+│  └────┬─────┘  └────┬─────┘  └─────┬─────┘ │
+│       └─────────────┴──────────────┘        │
+│                     │                       │
+│            Single SQL Database              │
+└─────────────────────────────────────────────┘
+```
+
+### 1.2 Monolith Endpoints
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/api/products` | List all products |
+| POST | `/api/products` | Create product |
+| GET | `/api/products/{id}` | Get product by ID |
+| GET | `/api/orders` | List all orders |
+| POST | `/api/orders` | Place order (deducts stock inline) |
+| GET | `/api/orders/{id}` | Get order by ID |
+| GET | `/api/inventory/{productId}` | Get stock level |
+| PUT | `/api/inventory/{productId}` | Update stock level |
+
+### 1.3 Three Problems at Scale
+
+| # | Problem | Impact |
+|---|---|---|
+| **1. Single point of failure** | If the API process crashes, all capabilities (browse, order, inventory) go down simultaneously. There is no way to keep products browsable while orders are under maintenance. | Zero availability isolation |
+| **2. Shared database bottleneck** | All features compete for the same connection pool and table locks. A spike in order writes (e.g., a flash sale) locks rows in the Products table, blocking catalog reads. | Read/write contention at scale |
+| **3. No independent scalability** | The catalog service receives 100× more traffic than the order service. With a monolith, scaling means duplicating the entire application — wasting resources on order and inventory logic that doesn't need extra capacity. | Wasteful horizontal scaling |
+
+---
+
+## 2. System Overview
+
+This system is a production-grade e-commerce platform that was evolved from the monolithic starting point above into a fully distributed microservices architecture. It demonstrates containers, async messaging, the saga pattern, API gateway, BFF, load balancing, polyglot persistence, and observability.
 
 **Core capabilities:**
 - Browse products (paginated, searchable, cached)
