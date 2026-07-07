@@ -52,7 +52,7 @@ public class OrdersController : ControllerBase
         try
         {
             var order = await _orderService.CreateOrderAsync(createDto);
-            return CreatedAtAction(nameof(GetById), new { id = order.            git push origin masterId }, order);
+            return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
         }
         catch (ArgumentException ex)
         {

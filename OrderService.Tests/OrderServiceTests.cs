@@ -1,4 +1,4 @@
-Assert.Equal("Confirmed", result.Status);using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OrderService.DTOs;
 using OrderService.Interfaces;
