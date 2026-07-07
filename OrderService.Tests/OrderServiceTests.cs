@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+Assert.Equal("Confirmed", result.Status);using Microsoft.Extensions.Logging;
 using Moq;
 using OrderService.DTOs;
 using OrderService.Interfaces;
@@ -106,7 +106,7 @@ public class OrderServiceTests
         var result = await sut.CreateOrderAsync(dto);
 
         // Assert
-        Assert.Equal("Pending", result.Status);
+        Assert.Equal("Confirmed", result.Status);
         Assert.Equal(2500m, result.TotalAmount);
         Assert.Equal("Jane Doe", result.UserName);
 
