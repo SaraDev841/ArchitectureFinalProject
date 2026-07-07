@@ -1,5 +1,7 @@
 # Store API — Production-Grade Microservices
 
+[![CI](https://github.com/SaraDev841/ArchitectureFinalProject/actions/workflows/ci.yml/badge.svg)](https://github.com/SaraDev841/ArchitectureFinalProject/actions/workflows/ci.yml)
+
 A fully distributed e-commerce order system demonstrating the complete microservices lifecycle: containerisation, async messaging, saga pattern, API gateway, BFF, load balancing, polyglot persistence, and observability.
 
 ---

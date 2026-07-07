@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryService", "Invento
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "NotificationService\NotificationService.csproj", "{1FD59EA3-32FB-4F84-B175-2593DBB976AD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Tests", "OrderService.Tests\OrderService.Tests.csproj", "{BA791B66-02D4-400B-95AF-869379BD7D6E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{1FD59EA3-32FB-4F84-B175-2593DBB976AD}.Release|x64.Build.0 = Release|Any CPU
 		{1FD59EA3-32FB-4F84-B175-2593DBB976AD}.Release|x86.ActiveCfg = Release|Any CPU
 		{1FD59EA3-32FB-4F84-B175-2593DBB976AD}.Release|x86.Build.0 = Release|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Debug|x64.Build.0 = Debug|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Debug|x86.Build.0 = Debug|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Release|x64.ActiveCfg = Release|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Release|x64.Build.0 = Release|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Release|x86.ActiveCfg = Release|Any CPU
+		{BA791B66-02D4-400B-95AF-869379BD7D6E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
