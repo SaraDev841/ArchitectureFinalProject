@@ -101,3 +101,31 @@ Consumers are made idempotent by:
 - Each service requires the `RabbitMQ.Client` NuGet package (included in SharedKernel).
 - A RabbitMQ outage blocks new order confirmations but does not crash the services — they retry the connection every 5 seconds (`RabbitMqConsumerBase` reconnect loop).
 - The management UI at http://localhost:15672 (guest/guest) shows queue depths and message rates in real time — useful for the demo.
+
+## Extension: MongoDB persistence for notifications and Grafana observability
+
+### Context
+The notification step of the saga needed a place to persist notification events in a flexible way. Notifications are semi-structured, append-only, and easier to store as documents than as relational rows.
+
+### Decision
+Add MongoDB to the `NotificationService` and store every processed notification event in a `notifications` collection inside the `notificationsdb` database. In parallel, add Grafana to the Docker Compose stack so the project has a lightweight UI for dashboards and future metrics.
+
+### Why specifically in NotificationService?
+- The notification service already owns the business event that is emitted after the order saga completes.
+- A document database fits event history better than a relational table because each notification can carry a flexible payload.
+- Keeping MongoDB only for notifications prevents the other services from needing a second persistence model.
+- Grafana is a natural observability layer for the project and is exposed on port `3000`.
+
+### Implementation footprint
+- Code: NotificationService/Data/MongoNotificationContext.cs, NotificationService/Data/NotificationDocument.cs, NotificationService/Services/NotificationStore.cs
+- Runtime wiring: NotificationService/Program.cs and the notification consumers in NotificationService/Messaging/
+- Infrastructure: docker-compose.yml adds a `mongo` service on port `27018` and a `grafana` service on port `3000`
+- Dashboard template: docs/grafana/notification-dashboard.json
+
+### Result
+The system now uses a polyglot approach in practice:
+- SQL Server for transactional business data
+- Redis for cache
+- RabbitMQ for saga events
+- MongoDB for notification history
+- Grafana for observability dashboards

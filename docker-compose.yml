@@ -59,6 +59,35 @@ services:
     volumes:
       - seq_data:/data
 
+  mongo:
+    image: mongo:7.0
+    container_name: store_mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: store_grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      seq:
+        condition: service_started
+
   # ??? Microservices ?????????????????????????????????????????????????????????
 
   userauthservice:
@@ -201,6 +230,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       RabbitMQ__Host: "rabbitmq"
+      MongoDb__ConnectionString: "mongodb://mongo:27017"
+      MongoDb__Database: "notificationsdb"
       Serilog__WriteTo__2__Args__serverUrl: "http://seq:80"
     ports:
       - "5006:8080"
@@ -212,6 +243,8 @@ services:
       start_period: 30s
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      mongo:
         condition: service_healthy
 
   bffservice:
@@ -277,9 +310,10 @@ services:
       bffservice:
         condition: service_healthy
 
-
 volumes:
   sqlserver_data:
   redis_data:
   rabbitmq_data:
   seq_data:
+  mongo_data:
+  grafana_data:

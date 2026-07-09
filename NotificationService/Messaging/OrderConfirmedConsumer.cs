@@ -20,19 +20,28 @@ public class OrderConfirmedConsumer : RabbitMqConsumerBase<OrderConfirmedEvent>
     {
     }
 
-    protected override Task HandleAsync(
+    protected override async Task HandleAsync(
         OrderConfirmedEvent message,
         IServiceScope scope,
         CancellationToken cancellationToken)
     {
         CorrelationContext.CorrelationId = message.CorrelationId;
 
-        // In a real system: send email via SendGrid/SES, or push SMS via Twilio
+        var notificationStore = scope.ServiceProvider.GetRequiredService<Services.NotificationStore>();
+        var notification = new Data.NotificationDocument
+        {
+            OrderId = message.OrderId,
+            EventType = "OrderConfirmed",
+            Message = $"Order confirmed for user {message.UserId} with total {message.TotalAmount:C}.",
+            OccurredAt = DateTime.UtcNow,
+            Payload = new { message.UserId, message.TotalAmount, message.CorrelationId }
+        };
+
+        await notificationStore.SaveAsync(notification);
+
         Logger.LogInformation(
             "NOTIFICATION SENT → Order #{OrderId} CONFIRMED for UserId {UserId}. " +
             "Total: {TotalAmount:C}. [CorrelationId: {CorrelationId}]",
             message.OrderId, message.UserId, message.TotalAmount, message.CorrelationId);
-
-        return Task.CompletedTask;
     }
 }

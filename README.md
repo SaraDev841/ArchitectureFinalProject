@@ -23,6 +23,8 @@ All services start automatically. Databases are created and migrated on first bo
 | **API Gateway** | http://localhost:5000 | Single entry point for all clients |
 | **Seq (Log Viewer)** | http://localhost:5341 | Centralised structured logs |
 | **RabbitMQ Management** | http://localhost:15672 | guest / guest |
+| **Grafana** | http://localhost:3000 | admin / admin (import the starter dashboard from docs/grafana/notification-dashboard.json) |
+| **MongoDB** | mongodb://localhost:27018 | Document store for notification events |
 | **Swagger — UserAuth** | http://localhost:5001/swagger | Direct (dev only) |
 | **Swagger — Catalog 1** | http://localhost:5002/swagger | Direct (dev only) |
 | **Swagger — Catalog 2** | http://localhost:5009/swagger | Direct (dev only) |
@@ -68,7 +70,7 @@ Browser / Angular (4200)
 | **ProductCatalogService** | Products and categories (×2 replicas) | SQL Server + Redis cache | 5002 / 5009 |
 | **OrderService** | Order lifecycle, saga orchestration | SQL Server (`orderdb`) | 5003 |
 | **InventoryService** | Stock management, saga consumer | SQL Server (`inventorydb`) | 5005 |
-| **NotificationService** | Customer notifications, saga consumer | None (event log only) | 5006 |
+| **NotificationService** | Customer notifications, saga consumer | MongoDB (`notificationsdb`) + RabbitMQ | 5006 |
 | **BffService** | Aggregated views for the frontend | Redis cache | 5004 |
 | **ApiGateway** | Routing, rate limiting | None | 5000 |
 
@@ -174,6 +176,16 @@ curl http://localhost:5000/products/1
 ```
 
 ---
+
+## Grafana and NoSQL Observability
+
+Grafana is included as a lightweight observability UI for the project.
+
+- Open Grafana at http://localhost:3000
+- Login with `admin` / `admin`
+- Import the starter dashboard from [docs/grafana/notification-dashboard.json](docs/grafana/notification-dashboard.json)
+
+MongoDB was added to the notification flow because notification events are naturally document-shaped and append-only. The service persists each event in a `notifications` collection inside the `notificationsdb` database.
 
 ## Health Checks
 

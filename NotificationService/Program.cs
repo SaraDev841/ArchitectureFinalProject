@@ -1,4 +1,6 @@
+using NotificationService.Data;
 using NotificationService.Messaging;
+using NotificationService.Services;
 using Serilog;
 using SharedKernel.Middleware;
 
@@ -23,6 +25,12 @@ try
 
     // ── Health checks ─────────────────────────────────────────────────────────
     builder.Services.AddHealthChecks();
+
+    // ── MongoDB support for notifications ─────────────────────────────────────
+    var mongoConnection = builder.Configuration["MongoDb:ConnectionString"] ?? "mongodb://mongo:27017";
+    var mongoDatabase = builder.Configuration["MongoDb:Database"] ?? "notificationsdb";
+    builder.Services.AddSingleton(new MongoNotificationContext(mongoConnection, mongoDatabase));
+    builder.Services.AddScoped<NotificationStore>();
 
     // ── RabbitMQ consumers ────────────────────────────────────────────────────
     var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
